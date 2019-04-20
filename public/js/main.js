@@ -2,6 +2,14 @@ let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000)
 let renderer = new THREE.WebGLRenderer({antialias: true});
 
+let objLoader = new THREE.OBJLoader();
+    objLoader.setPath("./assets/")
+
+let raycaster = new THREE.Raycaster();
+
+let geometry = new THREE.BoxBufferGeometry( 1, 2, 1 );
+let material = new THREE.MeshPhongMaterial( { color: 0x3794cf , shininess: 80} );    
+
 renderer.setClearColor("#e5e5e5");
 renderer.setSize(window.innerWidth,window.innerHeight);
 
@@ -14,11 +22,68 @@ window.addEventListener('resize', () => {
     camera.updateProjectionMatrix();
 })
 
-var raycaster = new THREE.Raycaster();
-var mouse = new THREE.Vector2();
+var i = 0;
+var ObjArr = [];
 
-var geometry = new THREE.BoxBufferGeometry( 1, 2, 1 );
-var material = new THREE.MeshPhongMaterial( { color: 0x3794cf , shininess: 80} );
+class Structure{
+
+    constructor(path, scale, x, y, z, rotation, type, name){
+
+        this.scale = scale;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.rotation = rotation;
+        this.type = type;
+        this.name = name;
+
+        this.id = load(path, scale);
+    }
+
+    update(){
+        ObjArr[this.id].position.x = this.x;
+        ObjArr[this.id].position.y = this.y;
+        ObjArr[this.id].position.z = this.z;
+        ObjArr[this.id].scale.set = this.scale;
+    }
+
+};
+
+class Movable extends Structure{
+
+    constructor(path, scale, x, y, z, rotation, type, id, speed, owner){
+        super(path, x, y, z, rotation, type, id);
+
+        this.speed = speed;
+        this.owner = owner;
+    }
+
+}
+
+function load(path, scale){
+    i++;
+
+    objLoader.load(
+        path,
+                        
+        function ( object ) {
+            ObjArr.push(object);
+
+            scene.add(object);
+        },
+    );
+    
+    return i - 1;
+}
+
+// Creating objects
+var c = new Movable("mustang.obj", 0.02, 5, 6, -100, 0, "static", "house", 10, 10);
+var o = new Structure("house_01.obj" , 0.2, 5, 6, -200, 0, "static", "house");
+
+var light = new THREE.PointLight(0xFFFFFF, 1, 1000)
+light.position.set(0,0,0);
+scene.add(light);
+
 
 for(var i = 0; i<25;i++) {
     var mesh = new THREE.Mesh( geometry, material );
@@ -30,22 +95,17 @@ for(var i = 0; i<25;i++) {
     scene.add(mesh);
 }
 
-var objLoader = new THREE.OBJLoader();
-objLoader.setPath("./assets/")
-objLoader.material = new THREE.MeshPhongMaterial();
-objLoader.load("house.obj", function( object ) {
-    object.position.z -= 30;
-
-    scene.add( object );
-});
-
-
-var light = new THREE.PointLight(0xFFFFFF, 1, 1000)
-light.position.set(0,0,0);
-scene.add(light);
-
 var render = function() {
     requestAnimationFrame(render);
+
+    o.update();
+
+    o.z -= 0.2;
+    //ObjArr[1].scale.set(0.02 , 0.02, 0.02);
+    //ObjArr[1].rotation.x = 105.2;
+    //ObjArr[1].position.z += 0.05;
+    //o.update();
+
 
     renderer.render(scene, camera);
 
